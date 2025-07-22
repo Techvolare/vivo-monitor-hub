@@ -8,35 +8,51 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 98%;
+    --foreground: 240 10% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 240 10% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Vivo Purple Primary */
+    --primary: 285 100% 30%;
+    --primary-foreground: 0 0% 98%;
+    --primary-glow: 285 80% 45%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Vivo Purple Secondary */
+    --secondary: 285 60% 70%;
+    --secondary-foreground: 240 10% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 5% 95%;
+    --muted-foreground: 240 5% 45%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 285 60% 92%;
+    --accent-foreground: 285 100% 30%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 285 100% 30%;
+
+    /* Vivo specific tokens */
+    --vivo-purple: 285 100% 30%;
+    --vivo-purple-light: 285 60% 70%;
+    --vivo-gradient: linear-gradient(135deg, hsl(285 100% 30%), hsl(285 80% 45%));
+    --vivo-gradient-subtle: linear-gradient(135deg, hsl(285 60% 95%), hsl(285 40% 98%));
+    
+    /* Effects */
+    --shadow-vivo: 0 10px 30px -10px hsl(285 100% 30% / 0.3);
+    --shadow-glow: 0 0 40px hsl(285 80% 45% / 0.4);
 
     --radius: 0.5rem;
+
+    /* Animation keyframes */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
