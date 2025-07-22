@@ -3,7 +3,7 @@ import { Button } from "./button";
 import vivoLogo from "@/assets/vivo-logo.png";
 
 interface NavbarProps {
-  onLogout: () => void;
+  onLogout?: () => void;
   isAdmin?: boolean;
 }
 
@@ -23,7 +23,7 @@ export const Navbar = ({ onLogout, isAdmin }: NavbarProps) => {
             </h1>
           </div>
           
-          {isAdmin && (
+          {isAdmin && onLogout && (
             <div className="flex items-center space-x-4">
               <span className="text-sm text-muted-foreground">
                 Admin Dashboard
