@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { SimpleSearchForm } from "@/components/dashboard/simple-search-form";
-import { MonitoringResults } from "@/components/dashboard/monitoring-results";
+import { EnhancedSearchForm } from "@/components/dashboard/enhanced-search-form";
+import { EnhancedMonitoringResults } from "@/components/dashboard/enhanced-monitoring-results";
+import { EnhancedSettingsModal } from "@/components/dashboard/enhanced-settings-modal";
 import { Navbar } from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
@@ -9,44 +10,97 @@ import { useNavigate } from "react-router-dom";
 const Consulta = () => {
   const navigate = useNavigate();
   const [results, setResults] = useState(null);
-  const [currentQuery, setCurrentQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [config, setConfig] = useState({
+    zabbix: {
+      infra: { url: '', username: '', password: '', token: '' }
+    },
+    elastic: {
+      infra: { url: '', username: '', password: '', token: '' },
+      apm: { url: '', username: '', password: '', token: '' }
+    },
+    dynatrace: {
+      infra: { url: '', username: '', password: '', token: '', apmTag: '', hostGroupFilter: '' },
+      apm: { url: '', username: '', password: '', token: '', apmTag: 'service', hostGroupFilter: '' }
+    }
+  });
 
-  const handleSearch = (query: string) => {
-    setCurrentQuery(query);
+  const parseMultipleQueries = (query: string) => {
+    return query.split(/[,;.\s]+/).filter(q => q.trim().length > 0);
+  };
+
+  const handleSearch = (query: string, type: 'infra' | 'apm') => {
+    setIsLoading(true);
+    const queries = parseMultipleQueries(query);
     
-    // Simulação de dados de monitoramento
+    // Simulação de dados de monitoramento expandidos
     const mockData = {
-      zabbix: {
-        status: "success",
-        data: {
-          host: query,
-          templates: ["Template OS Linux", "Template App Apache"],
+      type,
+      queries,
+      zabbix: type === 'infra' ? {
+        status: "success" as const,
+        data: queries.map(q => ({
+          host: q,
+          templates: ["Template OS Linux", "Template App Apache", "Template Net Interface"],
           triggers: [
-            { name: "High CPU usage", severity: "warning" },
-            { name: "Low disk space", severity: "high" }
+            { name: "High CPU usage", severity: "warning", status: "active" },
+            { name: "Low disk space", severity: "high", status: "active" },
+            { name: "High memory usage", severity: "average", status: "active" }
+          ],
+          agentStatus: "active" as const,
+          hostGroups: ["Linux servers", "Production", "Web servers"],
+          tags: [
+            { tag: "Environment", value: "Production" },
+            { tag: "Team", value: "DevOps" },
+            { tag: "Location", value: "DataCenter-A" }
           ]
-        }
-      },
+        }))
+      } : undefined,
       elastic: {
-        status: "success",
-        data: {
-          services: [
-            { name: "nginx", status: "running" },
-            { name: "database", status: "running" }
-          ]
+        status: "success" as const,
+        data: type === 'infra' ? {
+          services: queries.flatMap(q => [
+            { name: "nginx", domain: q, status: "active", host: q },
+            { name: "database", domain: q, status: "active", host: q }
+          ])
+        } : {
+          applications: queries.flatMap(q => [
+            { name: "webapp", domain: q, status: "healthy", responseTime: 120, errorRate: 0.5 },
+            { name: "api", domain: q, status: "healthy", responseTime: 80, errorRate: 0.2 }
+          ])
         }
       },
       dynatrace: {
-        status: "success",
-        data: {
-          hosts: [
-            { name: query, type: "FULL_STACK", hostgroup: "production" }
-          ]
+        status: "success" as const,
+        data: type === 'infra' ? {
+          hosts: queries.map(q => ({
+            name: q,
+            monitoringType: "FULL_STACK" as const,
+            hostgroup: "production",
+            status: "healthy" as const
+          }))
+        } : {
+          applications: queries.flatMap(q => [
+            { 
+              name: q, 
+              tags: [
+                { key: "service", value: "web" },
+                { key: "environment", value: "prod" }
+              ],
+              status: "healthy" as const,
+              responseTime: 95
+            }
+          ])
         }
       }
     };
     
-    setResults(mockData);
+    // Simular delay de API
+    setTimeout(() => {
+      setResults(mockData);
+      setIsLoading(false);
+    }, 1500);
   };
 
   return (
@@ -76,14 +130,25 @@ const Consulta = () => {
           </div>
           
           <div className="mb-8">
-            <SimpleSearchForm onSearch={handleSearch} />
+            <EnhancedSearchForm 
+              onSearch={handleSearch} 
+              onOpenSettings={() => setSettingsOpen(true)}
+              isLoading={isLoading}
+            />
           </div>
           
-          {results && currentQuery && (
-            <MonitoringResults data={results} query={currentQuery} />
+          {results && (
+            <EnhancedMonitoringResults data={results} />
           )}
         </div>
       </div>
+      
+      <EnhancedSettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onSave={setConfig}
+        initialConfig={config}
+      />
     </div>
   );
 };
