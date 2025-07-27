@@ -60,10 +60,12 @@ const Consulta = () => {
       elastic: {
         status: "success" as const,
         data: type === 'infra' ? {
-          services: queries.flatMap(q => [
-            { name: "nginx", domain: q, status: "active", host: q },
-            { name: "database", domain: q, status: "active", host: q }
-          ])
+          hosts: queries.map(q => ({
+            hostname: q,
+            status: "active",
+            os: "Ubuntu 20.04",
+            ip: "192.168.1." + Math.floor(Math.random() * 100)
+          }))
         } : {
           applications: queries.flatMap(q => [
             { name: "webapp", domain: q, status: "healthy", responseTime: 120, errorRate: 0.5 },
@@ -78,7 +80,11 @@ const Consulta = () => {
             name: q,
             monitoringType: "FULL_STACK" as const,
             hostgroup: "production",
-            status: "healthy" as const
+            status: "healthy" as const,
+            problems: [
+              { title: "High CPU usage on " + q, severity: "WARNING", impact: "Performance" },
+              { title: "Memory leak detected", severity: "HIGH", impact: "Availability" }
+            ]
           }))
         } : {
           applications: queries.flatMap(q => [
@@ -89,7 +95,10 @@ const Consulta = () => {
                 { key: "environment", value: "prod" }
               ],
               status: "healthy" as const,
-              responseTime: 95
+              responseTime: 95,
+              problems: [
+                { title: "Response time degradation", severity: "MEDIUM", impact: "Performance" }
+              ]
             }
           ])
         }

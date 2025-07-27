@@ -68,9 +68,9 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
                   className="flex-1"
                   disabled={isLoading}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Busca por hosts em: Zabbix, Elasticsearch e Dynatrace
-                </p>
+                 <p className="text-xs text-muted-foreground">
+                   Busca por hosts em: Zabbix, Elastic e Dynatrace
+                 </p>
               </div>
               <Button 
                 type="submit" 
@@ -104,9 +104,9 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
                   className="flex-1"
                   disabled={isLoading}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Busca por aplicações em: Elasticsearch (labels.domain) e Dynatrace (tags configuráveis)
-                </p>
+                 <p className="text-xs text-muted-foreground">
+                   Busca por aplicações em: Elastic (labels.domain) e Dynatrace (tags configuráveis)
+                 </p>
               </div>
               <Button 
                 type="submit" 

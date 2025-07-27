@@ -13,7 +13,7 @@ interface ZabbixData {
 }
 
 interface ElasticInfraData {
-  services: Array<{ name: string; domain: string; status: string; host: string }>;
+  hosts: Array<{ hostname: string; status: string; os: string; ip: string }>;
 }
 
 interface ElasticApmData {
@@ -32,6 +32,7 @@ interface DynatraceInfraData {
     monitoringType: 'FULL_STACK' | 'INFRASTRUCTURE';
     hostgroup: string;
     status: 'healthy' | 'warning' | 'critical';
+    problems: Array<{ title: string; severity: string; impact: string }>;
   }>;
 }
 
@@ -41,6 +42,7 @@ interface DynatraceApmData {
     tags: Array<{ key: string; value: string }>;
     status: 'healthy' | 'warning' | 'critical';
     responseTime: number;
+    problems: Array<{ title: string; severity: string; impact: string }>;
   }>;
 }
 
@@ -203,14 +205,14 @@ export const EnhancedMonitoringResults = ({ data }: EnhancedMonitoringResultsPro
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center space-x-2">
               <Activity className="h-5 w-5 text-yellow-600" />
-              <span>Elasticsearch</span>
+              <span>Elastic</span>
             </CardTitle>
             {getStatusIcon(data.elastic.status)}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {data.elastic.status === 'loading' && (
-            <p className="text-muted-foreground">Consultando Elasticsearch...</p>
+            <p className="text-muted-foreground">Consultando Elastic...</p>
           )}
           
           {data.elastic.status === 'error' && (
@@ -221,18 +223,18 @@ export const EnhancedMonitoringResults = ({ data }: EnhancedMonitoringResultsPro
             <div className="space-y-3">
               {data.type === 'infra' ? (
                 <div>
-                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Serviços de Infraestrutura</h4>
+                  <h4 className="font-medium text-sm text-muted-foreground mb-2">Hosts Monitorados</h4>
                   <div className="space-y-2">
-                    {(data.elastic.data as ElasticInfraData).services.map((service, index) => (
+                    {(data.elastic.data as ElasticInfraData).hosts.map((host, index) => (
                       <div key={index} className="border border-border rounded-md p-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{service.name}</span>
-                          <Badge variant={service.status === 'active' ? 'default' : 'secondary'}>
-                            {service.status}
+                          <span className="text-sm font-medium">{host.hostname}</span>
+                          <Badge variant={host.status === 'active' ? 'default' : 'secondary'}>
+                            {host.status}
                           </Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Host: {service.host} | Domain: {service.domain}
+                          IP: {host.ip} | OS: {host.os}
                         </p>
                       </div>
                     ))}
@@ -308,9 +310,22 @@ export const EnhancedMonitoringResults = ({ data }: EnhancedMonitoringResultsPro
                             </Badge>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Host Group: {host.hostgroup}
-                        </p>
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>Host Group: {host.hostgroup}</p>
+                          {host.problems && host.problems.length > 0 && (
+                            <div>
+                              <p className="font-medium text-destructive">Problems:</p>
+                              {host.problems.map((problem, idx) => (
+                                <div key={idx} className="flex items-center justify-between text-xs border border-destructive/20 rounded px-1 mt-1">
+                                  <span className="truncate">{problem.title}</span>
+                                  <Badge variant="destructive" className="text-xs ml-1">
+                                    {problem.severity}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -335,9 +350,22 @@ export const EnhancedMonitoringResults = ({ data }: EnhancedMonitoringResultsPro
                               </Badge>
                             ))}
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            Response Time: {app.responseTime}ms
-                          </p>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <p>Response Time: {app.responseTime}ms</p>
+                            {app.problems && app.problems.length > 0 && (
+                              <div>
+                                <p className="font-medium text-destructive">Problems:</p>
+                                {app.problems.map((problem, idx) => (
+                                  <div key={idx} className="flex items-center justify-between text-xs border border-destructive/20 rounded px-1 mt-1">
+                                    <span className="truncate">{problem.title}</span>
+                                    <Badge variant="destructive" className="text-xs ml-1">
+                                      {problem.severity}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}

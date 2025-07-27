@@ -105,7 +105,7 @@ export const EnhancedSettingsModal = ({ isOpen, onClose, onSave, initialConfig }
     },
     {
       key: 'elastic' as const,
-      name: 'Elasticsearch',
+      name: 'Elastic',
       icon: Activity,
       color: 'text-yellow-600',
       types: ['infra', 'apm']
