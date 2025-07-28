@@ -12,17 +12,17 @@ const Consulta = () => {
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // TODO: Implementar verificação de admin real
   const [config, setConfig] = useState({
     zabbix: {
       infra: { url: '', username: '', password: '', token: '' }
     },
     elastic: {
-      infra: { url: '', username: '', password: '', token: '' },
-      apm: { url: '', username: '', password: '', token: '' }
+      infra: { url: '', username: '', password: '', token: '', index: '' },
+      apm: { url: '', username: '', password: '', token: '', index: '' }
     },
     dynatrace: {
-      infra: { url: '', username: '', password: '', token: '', apmTag: '', hostGroupFilter: '' },
-      apm: { url: '', username: '', password: '', token: '', apmTag: 'service', hostGroupFilter: '' }
+      infra: { url: '', username: '', password: '', token: '' }
     }
   });
 
@@ -30,86 +30,30 @@ const Consulta = () => {
     return query.split(/[,;.\s]+/).filter(q => q.trim().length > 0);
   };
 
-  const handleSearch = (query: string, type: 'infra' | 'apm') => {
+  const handleSearch = async (query: string, type: 'infra' | 'apm', selectedTools: string[]) => {
     setIsLoading(true);
     const queries = parseMultipleQueries(query);
     
-    // Simulação de dados de monitoramento expandidos
-    const mockData = {
-      type,
-      queries,
-      zabbix: type === 'infra' ? {
-        status: "success" as const,
-        data: queries.map(q => ({
-          host: q,
-          templates: ["Template OS Linux", "Template App Apache", "Template Net Interface"],
-          triggers: [
-            { name: "High CPU usage", severity: "warning", status: "active" },
-            { name: "Low disk space", severity: "high", status: "active" },
-            { name: "High memory usage", severity: "average", status: "active" }
-          ],
-          agentStatus: "active" as const,
-          hostGroups: ["Linux servers", "Production", "Web servers"],
-          tags: [
-            { tag: "Environment", value: "Production" },
-            { tag: "Team", value: "DevOps" },
-            { tag: "Location", value: "DataCenter-A" }
-          ]
-        }))
-      } : undefined,
-      elastic: {
-        status: "success" as const,
-        data: type === 'infra' ? {
-          hosts: queries.map(q => ({
-            hostname: q,
-            status: "active",
-            os: "Ubuntu 20.04",
-            ip: "192.168.1." + Math.floor(Math.random() * 100)
-          }))
-        } : {
-          applications: queries.flatMap(q => [
-            { name: "webapp", domain: q, status: "healthy", responseTime: 120, errorRate: 0.5 },
-            { name: "api", domain: q, status: "healthy", responseTime: 80, errorRate: 0.2 }
-          ])
-        }
-      },
-      dynatrace: {
-        status: "success" as const,
-        data: type === 'infra' ? {
-          hosts: queries.map(q => ({
-            name: q,
-            monitoringType: "FULL_STACK" as const,
-            hostgroup: "production",
-            status: "healthy" as const,
-            problems: [
-              { title: "High CPU usage on " + q, severity: "WARNING", impact: "Performance" },
-              { title: "Memory leak detected", severity: "HIGH", impact: "Availability" }
-            ]
-          }))
-        } : {
-          applications: queries.flatMap(q => [
-            { 
-              name: q, 
-              tags: [
-                { key: "service", value: "web" },
-                { key: "environment", value: "prod" }
-              ],
-              status: "healthy" as const,
-              responseTime: 95,
-              problems: [
-                { title: "Response time degradation", severity: "MEDIUM", impact: "Performance" }
-              ]
-            }
-          ])
-        }
-      }
-    };
-    
-    // Simular delay de API
-    setTimeout(() => {
-      setResults(mockData);
+    try {
+      // TODO: Implementar chamadas reais para as APIs baseadas na configuração
+      // Estrutura de resposta vazia para ser preenchida com dados reais
+      const resultsData = {
+        type,
+        queries,
+        zabbix: undefined as any,
+        elastic: undefined as any,
+        dynatrace: undefined as any
+      };
+
+      // Aqui você deve implementar as chamadas reais para cada ferramenta selecionada
+      // baseado na configuração salva e nos selectedTools
+      
+      setResults(resultsData);
+    } catch (error) {
+      console.error('Erro na consulta:', error);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -141,7 +85,7 @@ const Consulta = () => {
           <div className="mb-8">
             <EnhancedSearchForm 
               onSearch={handleSearch} 
-              onOpenSettings={() => setSettingsOpen(true)}
+              onOpenSettings={isAdmin ? () => setSettingsOpen(true) : undefined}
               isLoading={isLoading}
             />
           </div>
@@ -152,12 +96,14 @@ const Consulta = () => {
         </div>
       </div>
       
-      <EnhancedSettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onSave={setConfig}
-        initialConfig={config}
-      />
+      {isAdmin && (
+        <EnhancedSettingsModal
+          isOpen={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          onSave={setConfig}
+          initialConfig={config}
+        />
+      )}
     </div>
   );
 };

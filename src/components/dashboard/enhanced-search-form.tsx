@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, Settings, Server, Activity } from "lucide-react";
 
 interface EnhancedSearchFormProps {
-  onSearch: (query: string, type: 'infra' | 'apm') => void;
-  onOpenSettings: () => void;
+  onSearch: (query: string, type: 'infra' | 'apm', selectedTools: string[]) => void;
+  onOpenSettings?: () => void;
   isLoading: boolean;
 }
 
@@ -16,11 +16,15 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
   const [apmQuery, setApmQuery] = useState("");
   const [activeTab, setActiveTab] = useState<'infra' | 'apm'>('infra');
 
+  const infraTools = ['zabbix', 'elastic', 'dynatrace'];
+  const apmTools = ['elastic'];
+
   const handleSubmit = (e: React.FormEvent, type: 'infra' | 'apm') => {
     e.preventDefault();
     const query = type === 'infra' ? infraQuery : apmQuery;
+    const tools = type === 'infra' ? infraTools : apmTools;
     if (query.trim()) {
-      onSearch(query.trim(), type);
+      onSearch(query.trim(), type, tools);
     }
   };
 
@@ -33,15 +37,17 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
       <CardHeader className="pb-4">
         <div className="flex justify-between items-center">
           <CardTitle className="text-xl">Busca de Monitoração</CardTitle>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenSettings}
-            className="flex items-center space-x-2"
-          >
-            <Settings className="h-4 w-4" />
-            <span>Configurações</span>
-          </Button>
+          {onOpenSettings && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenSettings}
+              className="flex items-center space-x-2"
+            >
+              <Settings className="h-4 w-4" />
+              <span>Configurações</span>
+            </Button>
+          )}
         </div>
       </CardHeader>
       
@@ -104,9 +110,9 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
                   className="flex-1"
                   disabled={isLoading}
                 />
-                 <p className="text-xs text-muted-foreground">
-                   Busca por aplicações em: Elastic (labels.domain) e Dynatrace (tags configuráveis)
-                 </p>
+                  <p className="text-xs text-muted-foreground">
+                    Busca por aplicações em: Elastic (labels.domain)
+                  </p>
               </div>
               <Button 
                 type="submit" 

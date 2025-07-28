@@ -393,7 +393,7 @@ export const EnhancedMonitoringResults = ({ data }: EnhancedMonitoringResultsPro
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {data.type === 'infra' && renderZabbixResults()}
         {renderElasticResults()}
-        {renderDynatraceResults()}
+        {data.type === 'infra' && renderDynatraceResults()}
       </div>
     </div>
   );
