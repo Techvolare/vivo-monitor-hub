@@ -27,7 +27,7 @@ const Consulta = () => {
   });
 
   const parseMultipleQueries = (query: string) => {
-    return query.split(/[,;.\s]+/).filter(q => q.trim().length > 0);
+    return query.split(/[,;]+/).filter(q => q.trim().length > 0);
   };
 
   const handleSearch = async (query: string, type: 'infra' | 'apm', selectedTools: string[]) => {
