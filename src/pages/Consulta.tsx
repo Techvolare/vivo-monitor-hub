@@ -27,18 +27,20 @@ const Consulta = () => {
   });
 
   const parseMultipleQueries = (query: string) => {
-    return query.split(/[,;.\s]+/).filter(q => q.trim().length > 0);
+    return query.split(/[,;\s]+/).filter(q => q.trim().length > 0);
   };
 
-  const handleSearch = (query: string, type: 'infra' | 'apm') => {
+  const handleSearch = (query: string, type: 'infra' | 'apm', tools: string[] = ['todos']) => {
     setIsLoading(true);
     const queries = parseMultipleQueries(query);
     
     // Simulação de dados de monitoramento expandidos
+    const shouldIncludeTool = (tool: string) => tools.includes('todos') || tools.includes(tool);
+    
     const mockData = {
       type,
       queries,
-      zabbix: type === 'infra' ? {
+      zabbix: (type === 'infra' && shouldIncludeTool('zabbix')) ? {
         status: "success" as const,
         data: queries.map(q => ({
           host: q,
@@ -57,7 +59,7 @@ const Consulta = () => {
           ]
         }))
       } : undefined,
-      elastic: {
+      elastic: shouldIncludeTool('elastic') ? {
         status: "success" as const,
         data: type === 'infra' ? {
           hosts: queries.map(q => ({
@@ -72,8 +74,8 @@ const Consulta = () => {
             { name: "api", domain: q, status: "healthy", responseTime: 80, errorRate: 0.2 }
           ])
         }
-      },
-      dynatrace: {
+      } : undefined,
+      dynatrace: shouldIncludeTool('dynatrace') ? {
         status: "success" as const,
         data: type === 'infra' ? {
           hosts: queries.map(q => ({
@@ -102,7 +104,7 @@ const Consulta = () => {
             }
           ])
         }
-      }
+      } : undefined
     };
     
     // Simular delay de API
@@ -141,7 +143,6 @@ const Consulta = () => {
           <div className="mb-8">
             <EnhancedSearchForm 
               onSearch={handleSearch} 
-              onOpenSettings={() => setSettingsOpen(true)}
               isLoading={isLoading}
             />
           </div>
@@ -151,13 +152,6 @@ const Consulta = () => {
           )}
         </div>
       </div>
-      
-      <EnhancedSettingsModal
-        isOpen={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        onSave={setConfig}
-        initialConfig={config}
-      />
     </div>
   );
 };

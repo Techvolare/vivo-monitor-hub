@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { LoginForm } from "@/components/auth/login-form";
 import { Navbar } from "@/components/ui/navbar";
 import { SearchForm } from "@/components/dashboard/search-form";
@@ -20,6 +21,7 @@ interface SettingsConfig {
 }
 
 const Index = () => {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [searchResults, setSearchResults] = useState<any>(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -50,10 +52,12 @@ const Index = () => {
     if (credentials.username === "admin" && credentials.password === "vivo123") {
       setIsAuthenticated(true);
       localStorage.setItem("vivoMonitorAuth", "true");
+      localStorage.setItem("isAuthenticated", "true");
       toast({
         title: "Login realizado",
         description: "Bem-vindo ao Monitor Hub!",
       });
+      navigate('/');
       return true;
     }
     return false;
