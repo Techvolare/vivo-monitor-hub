@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoginForm } from "@/components/auth/login-form";
 import { Navbar } from "@/components/ui/navbar";
-import { SearchForm } from "@/components/dashboard/search-form";
-import { MonitoringResults } from "@/components/dashboard/monitoring-results";
-import { SettingsModal } from "@/components/dashboard/settings-modal";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { EnhancedSettingsModal } from "@/components/dashboard/enhanced-settings-modal";
+import { Settings, Database, Server, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ToolConfig {
@@ -12,30 +13,50 @@ interface ToolConfig {
   username: string;
   password: string;
   token: string;
+  index?: string;
+}
+
+interface DynatraceConfig extends ToolConfig {
+  apmTag: string;
+  hostGroupFilter: string;
 }
 
 interface SettingsConfig {
-  zabbix: ToolConfig;
-  elastic: ToolConfig;
-  dynatrace: ToolConfig;
+  zabbix: {
+    infra: ToolConfig;
+  };
+  elastic: {
+    infra: ToolConfig;
+    apm: ToolConfig;
+  };
+  dynatrace: {
+    infra: DynatraceConfig;
+    apm: DynatraceConfig;
+  };
 }
 
 const Index = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [searchResults, setSearchResults] = useState<any>(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<SettingsConfig>({
-    zabbix: { url: "", username: "", password: "", token: "" },
-    elastic: { url: "", username: "", password: "", token: "" },
-    dynatrace: { url: "", username: "", password: "", token: "" }
+    zabbix: {
+      infra: { url: '', username: '', password: '', token: '' }
+    },
+    elastic: {
+      infra: { url: '', username: '', password: '', token: '', index: '' },
+      apm: { url: '', username: '', password: '', token: '', index: '' }
+    },
+    dynatrace: {
+      infra: { url: '', username: '', password: '', token: '', apmTag: '', hostGroupFilter: '' },
+      apm: { url: '', username: '', password: '', token: '', apmTag: 'service', hostGroupFilter: '' }
+    }
   });
   const { toast } = useToast();
 
   // Verificar se já está autenticado (localStorage)
   useEffect(() => {
-    const auth = localStorage.getItem("vivoMonitorAuth");
+    const auth = localStorage.getItem("isAuthenticated");
     if (auth === "true") {
       setIsAuthenticated(true);
     }
@@ -51,13 +72,11 @@ const Index = () => {
     // Credenciais simples para demo (em produção, usar backend)
     if (credentials.username === "admin" && credentials.password === "vivo123") {
       setIsAuthenticated(true);
-      localStorage.setItem("vivoMonitorAuth", "true");
       localStorage.setItem("isAuthenticated", "true");
       toast({
         title: "Login realizado",
-        description: "Bem-vindo ao Monitor Hub!",
+        description: "Bem-vindo ao painel administrativo!",
       });
-      navigate('/');
       return true;
     }
     return false;
@@ -65,68 +84,21 @@ const Index = () => {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem("vivoMonitorAuth");
-    setSearchResults(null);
+    localStorage.removeItem("isAuthenticated");
     toast({
       title: "Logout realizado",
       description: "Até mais!",
     });
-  };
-
-  const handleSearch = async (query: string) => {
-    setIsSearching(true);
-    setSearchResults({
-      zabbix: { status: 'loading' },
-      elastic: { status: 'loading' },
-      dynatrace: { status: 'loading' }
-    });
-
-    // Simular consultas às APIs (em produção, fazer chamadas reais)
-    setTimeout(() => {
-      setSearchResults({
-        zabbix: {
-          status: 'success',
-          data: {
-            host: query,
-            templates: ['Template OS Linux', 'Template App HTTP Service', 'Template Net ICMP Ping'],
-            items: [
-              { name: 'CPU utilization', status: 'OK' },
-              { name: 'Memory utilization', status: 'OK' },
-              { name: 'Disk space usage', status: 'WARNING' }
-            ],
-            triggers: [
-              { name: 'High CPU usage', severity: 'High', status: 'PROBLEM' },
-              { name: 'Low disk space', severity: 'Average', status: 'OK' }
-            ]
-          }
-        },
-        elastic: {
-          status: 'success',
-          data: {
-            services: [
-              { name: 'web-service', domain: query, status: 'active' },
-              { name: 'api-gateway', domain: query, status: 'active' },
-              { name: 'database-service', domain: query, status: 'inactive' }
-            ]
-          }
-        },
-        dynatrace: {
-          status: 'success',
-          data: {
-            hosts: [
-              { name: query, monitoringType: 'FULL_STACK', hostgroup: 'Production' },
-              { name: `${query}-backup`, monitoringType: 'INFRASTRUCTURE', hostgroup: 'Backup' }
-            ]
-          }
-        }
-      });
-      setIsSearching(false);
-    }, 2000);
+    navigate('/');
   };
 
   const handleSaveSettings = (newSettings: SettingsConfig) => {
     setSettings(newSettings);
     localStorage.setItem("vivoMonitorSettings", JSON.stringify(newSettings));
+    toast({
+      title: "Configurações salvas",
+      description: "As configurações foram atualizadas com sucesso!",
+    });
   };
 
   if (!isAuthenticated) {
@@ -137,24 +109,89 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar onLogout={handleLogout} isAdmin={true} />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="space-y-8">
-          <SearchForm 
-            onSearch={handleSearch}
-            onOpenSettings={() => setShowSettings(true)}
-            isLoading={isSearching}
-          />
-          
-          {searchResults && (
-            <MonitoringResults 
-              data={searchResults}
-              query={searchResults.query || "Host pesquisado"}
-            />
-          )}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="space-y-6">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              Painel Administrativo
+            </h1>
+            <p className="text-muted-foreground">
+              Configuração das ferramentas de monitoramento
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Server className="h-5 w-5 text-primary" />
+                  <span>Zabbix</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Configurações de conexão com o Zabbix para monitoramento de infraestrutura
+                </p>
+                <div className="space-y-2 text-xs">
+                  <div>URL: {settings.zabbix.infra.url || 'Não configurado'}</div>
+                  <div>Status: {settings.zabbix.infra.url ? 'Configurado' : 'Pendente'}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Database className="h-5 w-5 text-primary" />
+                  <span>Elastic</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Configurações de conexão com o Elasticsearch para logs e APM
+                </p>
+                <div className="space-y-2 text-xs">
+                  <div>Infra URL: {settings.elastic.infra.url || 'Não configurado'}</div>
+                  <div>APM URL: {settings.elastic.apm.url || 'Não configurado'}</div>
+                  <div>Status: {(settings.elastic.infra.url && settings.elastic.apm.url) ? 'Configurado' : 'Pendente'}</div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  <span>Dynatrace</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm mb-4">
+                  Configurações de conexão com o Dynatrace para monitoramento avançado
+                </p>
+                <div className="space-y-2 text-xs">
+                  <div>Infra URL: {settings.dynatrace.infra.url || 'Não configurado'}</div>
+                  <div>APM URL: {settings.dynatrace.apm.url || 'Não configurado'}</div>
+                  <div>Status: {(settings.dynatrace.infra.url && settings.dynatrace.apm.url) ? 'Configurado' : 'Pendente'}</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="text-center">
+            <Button 
+              onClick={() => setShowSettings(true)}
+              className="bg-vivo-gradient hover:opacity-90 transition-opacity"
+              size="lg"
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Configurar Ferramentas
+            </Button>
+          </div>
         </div>
       </div>
 
-      <SettingsModal
+      <EnhancedSettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         onSave={handleSaveSettings}
