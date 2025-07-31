@@ -70,7 +70,7 @@ const Index = () => {
   }, []);
 
   const handleLogin = (credentials: { username: string; password: string }) => {
-    // Credenciais simples para demo (em produção, usar backend)
+    // Em produção, implementar validação real com backend/API
     if (credentials.username === "admin" && credentials.password === "vivo123") {
       setIsAuthenticated(true);
       localStorage.setItem("isAuthenticated", "true");
@@ -80,6 +80,12 @@ const Index = () => {
       });
       return true;
     }
+    
+    toast({
+      title: "Credenciais inválidas",
+      description: "Usuário ou senha incorretos.",
+      variant: "destructive"
+    });
     return false;
   };
 

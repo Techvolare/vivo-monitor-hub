@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EnhancedSearchForm } from "@/components/dashboard/enhanced-search-form";
 import { EnhancedMonitoringResults } from "@/components/dashboard/enhanced-monitoring-results";
 import { EnhancedSettingsModal } from "@/components/dashboard/enhanced-settings-modal";
@@ -6,9 +6,12 @@ import { Navbar } from "@/components/ui/navbar";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { MonitoringAPIService } from "@/lib/api-services";
+import { useToast } from "@/hooks/use-toast";
 
 const Consulta = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [results, setResults] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -25,77 +28,78 @@ const Consulta = () => {
     }
   });
 
+  // Carregar configurações salvas do localStorage
+  useEffect(() => {
+    const savedSettings = localStorage.getItem("vivoMonitorSettings");
+    if (savedSettings) {
+      try {
+        setConfig(JSON.parse(savedSettings));
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    }
+  }, []);
+
   const parseMultipleQueries = (query: string) => {
     return query.split(/[,;\s]+/).filter(q => q.trim().length > 0);
   };
 
-  const handleSearch = (query: string, type: 'infra' | 'apm', tools: string[] = ['todos']) => {
+  const handleSearch = async (query: string, type: 'infra' | 'apm', tools: string[] = ['todos']) => {
     setIsLoading(true);
+    setResults(null);
+    
     const queries = parseMultipleQueries(query);
     
-    // Simulação de dados de monitoramento expandidos
-    const shouldIncludeTool = (tool: string) => tools.includes('todos') || tools.includes(tool);
-    
-    const mockData = {
-      type,
-      queries,
-      zabbix: (type === 'infra' && shouldIncludeTool('zabbix')) ? {
-        status: "success" as const,
-        data: queries.map(q => ({
-          host: q,
-          templates: ["Template OS Linux", "Template App Apache", "Template Net Interface"],
-          triggers: [
-            { name: "High CPU usage", severity: "warning", status: "active" },
-            { name: "Low disk space", severity: "high", status: "active" },
-            { name: "High memory usage", severity: "average", status: "active" }
-          ],
-          agentStatus: "active" as const,
-          hostGroups: ["Linux servers", "Production", "Web servers"],
-          tags: [
-            { tag: "Environment", value: "Production" },
-            { tag: "Team", value: "DevOps" },
-            { tag: "Location", value: "DataCenter-A" }
-          ]
-        }))
-      } : undefined,
-      elastic: shouldIncludeTool('elastic') ? {
-        status: "success" as const,
-        data: type === 'infra' ? {
-          hosts: queries.map(q => ({
-            hostname: q,
-            status: "active",
-            os: "Ubuntu 20.04",
-            ip: "192.168.1." + Math.floor(Math.random() * 100)
-          }))
-        } : {
-          applications: queries.flatMap(q => [
-            { name: "webapp", domain: q, status: "healthy", responseTime: 120, errorRate: 0.5 },
-            { name: "api", domain: q, status: "healthy", responseTime: 80, errorRate: 0.2 }
-          ])
+    try {
+      // Verificar se há configurações necessárias
+      const hasRequiredConfig = tools.some(tool => {
+        if (tool === 'todos') return true;
+        if (tool === 'zabbix' && type === 'infra') {
+          return config.zabbix.infra.url && config.zabbix.infra.token;
         }
-      } : undefined,
-      dynatrace: (type === 'infra' && shouldIncludeTool('dynatrace')) ? {
-        status: "success" as const,
-        data: {
-          hosts: queries.map(q => ({
-            name: q,
-            monitoringType: "FULL_STACK" as const,
-            hostgroup: "production",
-            status: "healthy" as const,
-            problems: [
-              { title: "High CPU usage on " + q, severity: "WARNING", impact: "Performance" },
-              { title: "Memory leak detected", severity: "HIGH", impact: "Availability" }
-            ]
-          }))
+        if (tool === 'elastic') {
+          const elasticConfig = type === 'infra' ? config.elastic.infra : config.elastic.apm;
+          return elasticConfig.url;
         }
-      } : undefined
-    };
-    
-    // Simular delay de API
-    setTimeout(() => {
-      setResults(mockData);
+        if (tool === 'dynatrace' && type === 'infra') {
+          return config.dynatrace.infra.url && config.dynatrace.infra.token;
+        }
+        return false;
+      });
+
+      if (!hasRequiredConfig && !tools.includes('todos')) {
+        toast({
+          title: "Configuração necessária",
+          description: "Configure as ferramentas selecionadas antes de realizar a consulta.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      const apiService = new MonitoringAPIService(config);
+      const results = await apiService.searchMonitoringData(queries, type, tools);
+      
+      setResults(results);
+    } catch (error) {
+      console.error('Erro na consulta:', error);
+      toast({
+        title: "Erro na consulta",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
+  };
+
+  const handleSaveSettings = (newConfig: any) => {
+    setConfig(newConfig);
+    localStorage.setItem("vivoMonitorSettings", JSON.stringify(newConfig));
+    toast({
+      title: "Configurações salvas",
+      description: "As configurações foram atualizadas com sucesso!",
+    });
   };
 
   return (
@@ -127,6 +131,7 @@ const Consulta = () => {
           <div className="mb-8">
             <EnhancedSearchForm 
               onSearch={handleSearch} 
+              onOpenSettings={() => setSettingsOpen(true)}
               isLoading={isLoading}
             />
           </div>
@@ -136,6 +141,13 @@ const Consulta = () => {
           )}
         </div>
       </div>
+
+      <EnhancedSettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onSave={handleSaveSettings}
+        initialConfig={config}
+      />
     </div>
   );
 };
