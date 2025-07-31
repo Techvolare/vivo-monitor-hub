@@ -20,17 +20,20 @@ interface DynatraceConfig extends ToolConfig {
   hostGroupFilter: string;
 }
 
+interface ElasticConfig extends ToolConfig {
+  indices: string;
+}
+
 interface EnhancedSettingsConfig {
   zabbix: {
     infra: ToolConfig;
   };
   elastic: {
-    infra: ToolConfig;
-    apm: ToolConfig;
+    infra: ElasticConfig;
+    apm: ElasticConfig;
   };
   dynatrace: {
     infra: DynatraceConfig;
-    apm: DynatraceConfig;
   };
 }
 
@@ -115,7 +118,7 @@ export const EnhancedSettingsModal = ({ isOpen, onClose, onSave, initialConfig }
       name: 'Dynatrace',
       icon: Cloud,
       color: 'text-green-600',
-      types: ['infra', 'apm']
+      types: ['infra']
     }
   ];
 
@@ -167,30 +170,28 @@ export const EnhancedSettingsModal = ({ isOpen, onClose, onSave, initialConfig }
           />
         </div>
 
+        {tool === 'elastic' && (
+          <div className="space-y-2">
+            <Label htmlFor={`${tool}-${type}-indices`}>Índices</Label>
+            <Input
+              id={`${tool}-${type}-indices`}
+              value={toolConfig?.indices || ''}
+              onChange={(e) => updateToolConfig(tool, type, 'indices', e.target.value)}
+              placeholder="ex: logs-*, metrics-*, apm-*"
+            />
+          </div>
+        )}
+
         {tool === 'dynatrace' && (
-          <>
-            {type === 'apm' && (
-              <div className="space-y-2">
-                <Label htmlFor={`${tool}-${type}-apmTag`}>Tag APM</Label>
-                <Input
-                  id={`${tool}-${type}-apmTag`}
-                  value={toolConfig?.apmTag || ''}
-                  onChange={(e) => updateToolConfig(tool, type, 'apmTag', e.target.value)}
-                  placeholder="ex: service, application"
-                />
-              </div>
-            )}
-            
-            <div className="space-y-2">
-              <Label htmlFor={`${tool}-${type}-hostGroupFilter`}>Filtro Host Group</Label>
-              <Input
-                id={`${tool}-${type}-hostGroupFilter`}
-                value={toolConfig?.hostGroupFilter || ''}
-                onChange={(e) => updateToolConfig(tool, type, 'hostGroupFilter', e.target.value)}
-                placeholder="ex: production, staging"
-              />
-            </div>
-          </>
+          <div className="space-y-2">
+            <Label htmlFor={`${tool}-${type}-hostGroupFilter`}>Filtro Host Group</Label>
+            <Input
+              id={`${tool}-${type}-hostGroupFilter`}
+              value={toolConfig?.hostGroupFilter || ''}
+              onChange={(e) => updateToolConfig(tool, type, 'hostGroupFilter', e.target.value)}
+              placeholder="ex: production, staging"
+            />
+          </div>
         )}
       </div>
     );
@@ -204,7 +205,7 @@ export const EnhancedSettingsModal = ({ isOpen, onClose, onSave, initialConfig }
         </DialogHeader>
 
         <Tabs defaultValue="zabbix-infra" className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-4 h-auto">
             {toolConfigs.map(tool => 
               tool.types.map(type => (
                 <TabsTrigger 

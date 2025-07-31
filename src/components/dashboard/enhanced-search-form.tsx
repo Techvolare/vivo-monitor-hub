@@ -18,6 +18,15 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
   const [activeTab, setActiveTab] = useState<'infra' | 'apm'>('infra');
   const [selectedTools, setSelectedTools] = useState<string[]>(['todos']);
 
+  // Ferramentas disponíveis por tipo
+  const getAvailableTools = (type: 'infra' | 'apm') => {
+    if (type === 'infra') {
+      return ['todos', 'zabbix', 'elastic', 'dynatrace'];
+    } else {
+      return ['todos', 'elastic']; // Apenas Elastic para APM
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent, type: 'infra' | 'apm') => {
     e.preventDefault();
     const query = type === 'infra' ? infraQuery : apmQuery;
@@ -41,6 +50,12 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
         setSelectedTools(selectedTools.filter(t => t !== tool));
       }
     }
+  };
+
+  // Resetar ferramentas selecionadas quando mudar de aba
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'infra' | 'apm');
+    setSelectedTools(['todos']); // Reset para 'todos' ao mudar de aba
   };
 
   const parseMultipleQueries = (query: string) => {
@@ -71,45 +86,26 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
         <div className="mb-6">
           <h3 className="text-sm font-medium mb-3">Ferramentas para Consulta:</h3>
           <div className="flex flex-wrap gap-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="todos"
-                checked={selectedTools.includes('todos')}
-                onCheckedChange={(checked) => handleToolChange('todos', checked as boolean)}
-              />
-              <label htmlFor="todos" className="text-sm font-medium">Todos</label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="zabbix"
-                checked={selectedTools.includes('zabbix')}
-                onCheckedChange={(checked) => handleToolChange('zabbix', checked as boolean)}
-                disabled={selectedTools.includes('todos')}
-              />
-              <label htmlFor="zabbix" className="text-sm">Zabbix</label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="elastic"
-                checked={selectedTools.includes('elastic')}
-                onCheckedChange={(checked) => handleToolChange('elastic', checked as boolean)}
-                disabled={selectedTools.includes('todos')}
-              />
-              <label htmlFor="elastic" className="text-sm">Elastic</label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="dynatrace"
-                checked={selectedTools.includes('dynatrace')}
-                onCheckedChange={(checked) => handleToolChange('dynatrace', checked as boolean)}
-                disabled={selectedTools.includes('todos')}
-              />
-              <label htmlFor="dynatrace" className="text-sm">Dynatrace</label>
-            </div>
+            {getAvailableTools(activeTab).map((tool) => (
+              <div key={tool} className="flex items-center space-x-2">
+                <Checkbox
+                  id={tool}
+                  checked={selectedTools.includes(tool)}
+                  onCheckedChange={(checked) => handleToolChange(tool, checked as boolean)}
+                  disabled={tool !== 'todos' && selectedTools.includes('todos')}
+                />
+                <label htmlFor={tool} className={`text-sm ${tool === 'todos' ? 'font-medium' : ''}`}>
+                  {tool === 'todos' ? 'Todos' : 
+                   tool === 'zabbix' ? 'Zabbix' :
+                   tool === 'elastic' ? 'Elastic' :
+                   tool === 'dynatrace' ? 'Dynatrace' : tool}
+                </label>
+              </div>
+            ))}
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'infra' | 'apm')} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="infra" className="flex items-center space-x-2">
               <Server className="h-4 w-4" />
@@ -127,13 +123,13 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
                 <Input
                   value={infraQuery}
                   onChange={(e) => setInfraQuery(e.target.value)}
-                  placeholder="Digite hosts separados por vírgula ou ponto e vírgula (ex: server1, server2; server3.domain)"
+                  placeholder="Digite hosts separados por vírgula ou ponto e vírgula (ex: server1, server2; server3domain)"
                   className="flex-1"
                   disabled={isLoading}
                 />
                  <p className="text-xs text-muted-foreground">
-                   Busca por hosts nas ferramentas selecionadas
-                 </p>
+                    Busca por hosts usando campos host.name ou host.hostname no Elastic
+                  </p>
               </div>
               <Button 
                 type="submit" 
@@ -168,8 +164,8 @@ export const EnhancedSearchForm = ({ onSearch, onOpenSettings, isLoading }: Enha
                   disabled={isLoading}
                 />
                  <p className="text-xs text-muted-foreground">
-                   Busca por aplicações em: Elastic (labels.domain) e Dynatrace (tags configuráveis)
-                 </p>
+                    Busca por aplicações no Elastic (labels.domain)
+                  </p>
               </div>
               <Button 
                 type="submit" 

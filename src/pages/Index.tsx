@@ -13,7 +13,10 @@ interface ToolConfig {
   username: string;
   password: string;
   token: string;
-  index?: string;
+}
+
+interface ElasticConfig extends ToolConfig {
+  indices: string;
 }
 
 interface DynatraceConfig extends ToolConfig {
@@ -26,12 +29,11 @@ interface SettingsConfig {
     infra: ToolConfig;
   };
   elastic: {
-    infra: ToolConfig;
-    apm: ToolConfig;
+    infra: ElasticConfig;
+    apm: ElasticConfig;
   };
   dynatrace: {
     infra: DynatraceConfig;
-    apm: DynatraceConfig;
   };
 }
 
@@ -44,12 +46,11 @@ const Index = () => {
       infra: { url: '', username: '', password: '', token: '' }
     },
     elastic: {
-      infra: { url: '', username: '', password: '', token: '', index: '' },
-      apm: { url: '', username: '', password: '', token: '', index: '' }
+      infra: { url: '', username: '', password: '', token: '', indices: '' },
+      apm: { url: '', username: '', password: '', token: '', indices: '' }
     },
     dynatrace: {
-      infra: { url: '', username: '', password: '', token: '', apmTag: '', hostGroupFilter: '' },
-      apm: { url: '', username: '', password: '', token: '', apmTag: 'service', hostGroupFilter: '' }
+      infra: { url: '', username: '', password: '', token: '', apmTag: '', hostGroupFilter: '' }
     }
   });
   const { toast } = useToast();
@@ -170,9 +171,8 @@ const Index = () => {
                   Configurações de conexão com o Dynatrace para monitoramento avançado
                 </p>
                 <div className="space-y-2 text-xs">
-                  <div>Infra URL: {settings.dynatrace.infra.url || 'Não configurado'}</div>
-                  <div>APM URL: {settings.dynatrace.apm.url || 'Não configurado'}</div>
-                  <div>Status: {(settings.dynatrace.infra.url && settings.dynatrace.apm.url) ? 'Configurado' : 'Pendente'}</div>
+                  <div>URL: {settings.dynatrace.infra.url || 'Não configurado'}</div>
+                  <div>Status: {settings.dynatrace.infra.url ? 'Configurado' : 'Pendente'}</div>
                 </div>
               </CardContent>
             </Card>

@@ -17,12 +17,11 @@ const Consulta = () => {
       infra: { url: '', username: '', password: '', token: '' }
     },
     elastic: {
-      infra: { url: '', username: '', password: '', token: '' },
-      apm: { url: '', username: '', password: '', token: '' }
+      infra: { url: '', username: '', password: '', token: '', indices: '' },
+      apm: { url: '', username: '', password: '', token: '', indices: '' }
     },
     dynatrace: {
-      infra: { url: '', username: '', password: '', token: '', apmTag: '', hostGroupFilter: '' },
-      apm: { url: '', username: '', password: '', token: '', apmTag: 'service', hostGroupFilter: '' }
+      infra: { url: '', username: '', password: '', token: '', apmTag: '', hostGroupFilter: '' }
     }
   });
 
@@ -75,9 +74,9 @@ const Consulta = () => {
           ])
         }
       } : undefined,
-      dynatrace: shouldIncludeTool('dynatrace') ? {
+      dynatrace: (type === 'infra' && shouldIncludeTool('dynatrace')) ? {
         status: "success" as const,
-        data: type === 'infra' ? {
+        data: {
           hosts: queries.map(q => ({
             name: q,
             monitoringType: "FULL_STACK" as const,
@@ -88,21 +87,6 @@ const Consulta = () => {
               { title: "Memory leak detected", severity: "HIGH", impact: "Availability" }
             ]
           }))
-        } : {
-          applications: queries.flatMap(q => [
-            { 
-              name: q, 
-              tags: [
-                { key: "service", value: "web" },
-                { key: "environment", value: "prod" }
-              ],
-              status: "healthy" as const,
-              responseTime: 95,
-              problems: [
-                { title: "Response time degradation", severity: "MEDIUM", impact: "Performance" }
-              ]
-            }
-          ])
         }
       } : undefined
     };
