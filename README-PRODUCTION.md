@@ -33,6 +33,15 @@ Este sistema permite consultar informações de monitoramento em múltiplas ferr
 
 ## Configuração das APIs
 
+### Problemas Comuns de CORS
+
+**IMPORTANTE**: A aplicação faz chamadas diretas do browser para as APIs. Isso pode gerar erros de CORS (Cross-Origin Resource Sharing). 
+
+**Soluções:**
+1. **Configure CORS no servidor** (recomendado)
+2. **Use um proxy reverso** (nginx, apache)
+3. **Desabilite CORS no browser** (apenas para desenvolvimento)
+
 ### Zabbix
 
 1. **Obter Token de Autenticação:**
@@ -55,6 +64,14 @@ curl -X POST \
 - URL: `https://seu-zabbix.com`
 - Token: Obtido no passo anterior
 - Usuário/Senha: Para autenticação básica (opcional)
+
+**Configuração CORS (se necessário):**
+```apache
+# No arquivo de configuração do Apache do Zabbix
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type, Authorization"
+```
 
 ### Elasticsearch
 
@@ -96,6 +113,15 @@ curl -X POST \
 - Índices: `logs-*,metrics-*` (para infra) ou `apm-*` (para APM)
 - Autenticação: Basic Auth ou Token Bearer
 
+**Configuração CORS (se necessário):**
+```yaml
+# No elasticsearch.yml
+http.cors.enabled: true
+http.cors.allow-origin: "*"
+http.cors.allow-methods: GET, POST, OPTIONS
+http.cors.allow-headers: "Content-Type, Authorization"
+```
+
 ### Dynatrace
 
 1. **Criar API Token:**
@@ -106,6 +132,9 @@ curl -X POST \
 - URL: `https://seu-ambiente.live.dynatrace.com`
 - Token: API Token gerado
 - Host Group Filter: Filtro opcional para grupos específicos
+
+**Configuração CORS:**
+O Dynatrace geralmente permite CORS por padrão para requisições autenticadas, mas se houver problemas, configure um proxy reverso.
 
 ## Fluxo de Configuração
 
@@ -166,6 +195,11 @@ curl -X POST \
 - Configurar certificados SSL válidos
 
 ## Troubleshooting
+
+### Erros de CORS:
+- **Erro**: "Failed to fetch" ou "CORS policy"
+- **Solução**: Configure CORS nos servidores ou use proxy reverso
+- **Alternativa**: Use extensão de browser para desabilitar CORS (apenas desenvolvimento)
 
 ### Erros Comuns
 

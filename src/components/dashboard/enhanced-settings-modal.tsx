@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Server, Activity, Cloud, Save, TestTube } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ConnectionTester } from "@/lib/connection-test";
 
 interface ToolConfig {
   url: string;
@@ -89,13 +90,49 @@ export const EnhancedSettingsModal = ({ isOpen, onClose, onSave, initialConfig }
     const testKey = `${tool}-${type}`;
     setTestingTool(testKey);
     
-    setTimeout(() => {
-      setTestingTool(null);
+    try {
+      let result;
+      const toolConfig = (config as any)[tool]?.[type];
+      
+      if (!toolConfig) {
+        throw new Error('Configuração não encontrada');
+      }
+
+      switch (tool) {
+        case 'zabbix':
+          result = await ConnectionTester.testZabbix(toolConfig);
+          break;
+        case 'elastic':
+          result = await ConnectionTester.testElasticsearch(toolConfig);
+          break;
+        case 'dynatrace':
+          result = await ConnectionTester.testDynatrace(toolConfig);
+          break;
+        default:
+          throw new Error('Ferramenta não suportada');
+      }
+
+      if (result.success) {
+        toast({
+          title: "✅ Conexão bem-sucedida",
+          description: `${tool} (${type}) conectado com sucesso!`,
+        });
+      } else {
+        toast({
+          title: "❌ Falha na conexão",
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Teste de conexão",
-        description: `Conexão com ${tool} (${type}) testada com sucesso!`,
+        title: "❌ Erro no teste",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
       });
-    }, 2000);
+    } finally {
+      setTestingTool(null);
+    }
   };
 
   const toolConfigs = [
